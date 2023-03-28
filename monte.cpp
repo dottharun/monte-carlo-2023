@@ -59,13 +59,13 @@ double energy_calc(double box[][3])
 
             double r_sq = (delx * delx) + (dely * dely) + (delz * delz);
 
-            if (r_sq > CUTOFF * CUTOFF)
+            if (r_sq > CUTOFF * CUTOFF)                     //if distance is to far, effected is neglected, energy is not added
                 continue;
 
             double SIGMA_sq = SIGMA * SIGMA;
             double temp = (SIGMA_sq / r_sq);
             double term2 = pow(temp, 3);                    //(σ/r)⁶
-            double term1 = term2 * term2;                   //(σ/r)¹²
+            double term1 = term2 * term2;                   //(σ/r)¹²4
             double LJ = 4.0 * EPSILON * (term1 - term2);    //Leonard-Jones Potential
             energy += LJ;                                   //Adding energy for each atom
         }
@@ -74,9 +74,9 @@ double energy_calc(double box[][3])
 }
 
 //energy change after each displacement
-double energy_change_calc(double box[][3], double old_x, double old_y, double old_z, double prev_energy, long long random_atom)
+double energy_change_calc(double box[][3], double prev_x, double prev_y, double prev_z, double prev_energy, long long random_atom)
 {
-    double old_interactions = 0.0;
+    double prev_interactions = 0.0;
     double new_interactions = 0.0;
     long long i;
     for (i = 0;i < ATOMS;i++)
@@ -109,9 +109,9 @@ double energy_change_calc(double box[][3], double old_x, double old_y, double ol
     {
         if (i != random_atom)
         {
-            double delx = old_x - box[i][0];
-            double dely = old_y - box[i][1];
-            double delz = old_z - box[i][2];
+            double delx = prev_x - box[i][0];
+            double dely = prev_y - box[i][1];
+            double delz = prev_z - box[i][2];
 
             delx = min_img(delx);
             dely = min_img(dely);
@@ -127,11 +127,11 @@ double energy_change_calc(double box[][3], double old_x, double old_y, double ol
             double term2 = pow(temp, 3);
             double term1 = term2 * term2;
             double LJ = 4.0 * EPSILON * (term1 - term2);
-            old_interactions += LJ;
+            prev_interactions += LJ;
         }
     }
 
-    return prev_energy - old_interactions + new_interactions;
+    return prev_energy - prev_interactions + new_interactions;
 }
 
 int main()
@@ -154,9 +154,8 @@ int main()
         for (j = 0;j < 3;j++)
         {
             box[i][j] = (int)((index[j] + 0.5) * (10 / 9));
-            file << box[i][j] << " ";
         }
-        index[0] = index[0] + 1;
+        index[0] = index[0] + 1;                        //we approximately distribute the 700 particles to 9³ = 729 places 
         if (index[0] == 9)
         {
             index[0] = 0;
@@ -177,27 +176,27 @@ int main()
     //no of accepted iterations
     long long ACCEPTED_COUNT = 0;
 
-    while (true)
+    while (ACCEPTED_COUNT < MOVES_LIMIT)
     {
         //selecting a random atom
         long long random_atom = (long long)(random_number(0, ATOMS));
 
-        //storing old coordinates for using, if rejected
-        double old_x = box[random_atom][0];
-        double old_y = box[random_atom][1];
-        double old_z = box[random_atom][2];
+        //storing old coordinates as previous for using, if rejected
+        double prev_x = box[random_atom][0];
+        double prev_y = box[random_atom][1];
+        double prev_z = box[random_atom][2];
 
-        //giving random displacement
+        //giving random displacement to the selected random atom
         box[random_atom][0] += random_number(0, 1.0) - 0.5;
         box[random_atom][1] += random_number(0, 1.0) - 0.5;
         box[random_atom][2] += random_number(0, 1.0) - 0.5;
 
-        //applying pbc to new coordinates
+        //applying pbc to new coordinates, if it had escaped the box
         box[random_atom][0] = pbc(box[random_atom][0]);
         box[random_atom][1] = pbc(box[random_atom][1]);
         box[random_atom][2] = pbc(box[random_atom][2]);
 
-        double new_energy = energy_change_calc(box, old_x, old_y, old_z, energy.back(), random_atom);
+        double new_energy = energy_change_calc(box, prev_x, prev_y, prev_z, energy.back(), random_atom);
 
         //energy.back() -> last valid configuration's energy
         double energy_change = new_energy - energy.back();
@@ -239,13 +238,11 @@ int main()
             //else reject the move and restore the old configuration
             else
             {
-                box[random_atom][0] = old_x;
-                box[random_atom][1] = old_y;
-                box[random_atom][2] = old_z;
+                box[random_atom][0] = prev_x;
+                box[random_atom][1] = prev_y;
+                box[random_atom][2] = prev_z;
             }
         }
-        if (ACCEPTED_COUNT == MOVES_LIMIT)
-            break;
     }
 
     return 0;
