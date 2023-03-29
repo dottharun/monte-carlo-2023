@@ -73,11 +73,9 @@ double energy_calc(double box[][3])
     return energy;
 }
 
-//energy change after each displacement
-double energy_change_calc(double box[][3], double prev_x, double prev_y, double prev_z, double prev_energy, int random_atom)
+double calc_interactions(double box[][3], int random_atom)
 {
-    double prev_interactions = 0.0;
-    double new_interactions = 0.0;
+    double interactions = 0.0;
     int i;
     for (i = 0;i < ATOMS;i++)
     {
@@ -101,37 +99,10 @@ double energy_change_calc(double box[][3], double prev_x, double prev_y, double 
             double term2 = pow(temp, 3);
             double term1 = term2 * term2;
             double LJ = 4.0 * EPSILON * (term1 - term2);
-            new_interactions += LJ;
+            interactions += LJ;
         }
     }
-
-    for (i = 0;i < ATOMS;i++)
-    {
-        if (i != random_atom)
-        {
-            double delx = prev_x - box[i][0];
-            double dely = prev_y - box[i][1];
-            double delz = prev_z - box[i][2];
-
-            delx = min_img(delx);
-            dely = min_img(dely);
-            delz = min_img(delz);
-
-            double r_sq = (delx * delx) + (dely * dely) + (delz * delz);
-
-            if (r_sq > CUTOFF * CUTOFF)
-                continue;
-
-            double SIGMA_sq = SIGMA * SIGMA;
-            double temp = (SIGMA_sq / r_sq);
-            double term2 = pow(temp, 3);
-            double term1 = term2 * term2;
-            double LJ = 4.0 * EPSILON * (term1 - term2);
-            prev_interactions += LJ;
-        }
-    }
-
-    return prev_energy - prev_interactions + new_interactions;
+    return interactions;
 }
 
 int main()
@@ -191,6 +162,8 @@ int main()
         //3. find interactions now
         //4. find new energy
 
+        double prev_interactions = calc_interactions(box, random_atom);
+
         //giving random displacement to the selected random atom
         box[random_atom][0] += random_number(0, 1.0) - 0.5;
         box[random_atom][1] += random_number(0, 1.0) - 0.5;
@@ -201,10 +174,13 @@ int main()
         box[random_atom][1] = pbc(box[random_atom][1]);
         box[random_atom][2] = pbc(box[random_atom][2]);
 
-        double new_energy = energy_change_calc(box, prev_x, prev_y, prev_z, energy.back(), random_atom);
+        double new_interactions = calc_interactions(box, random_atom);
+
+        // double new_energy = energy_change_calc(box, prev_x, prev_y, prev_z, energy.back(), random_atom);
 
         //energy.back() -> last valid configuration's energy
-        double energy_change = new_energy - energy.back();
+        double energy_change = new_interactions - prev_interactions;
+        double new_energy = energy.back() + energy_change;
 
         //energy change less than 0 -> finite probability
         //so we accept the move
