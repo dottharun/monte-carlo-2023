@@ -5,9 +5,9 @@
 #include "gnuplot-iostream.h"
 using namespace std;
 
-const long long ATOMS = 700;
+int ATOMS = 700;
 double BOX_DIM = 10.0;
-long long MOVES_LIMIT = 100000;
+int MOVES_LIMIT = 100000;
 double T = 1;
 double kT = 1;
 double SIGMA = 1;
@@ -43,7 +43,7 @@ double pbc(double x)
 double energy_calc(double box[][3])
 {
     double energy = 0;
-    long long i, j;
+    int i, j;
     //to find energy betwen each and every particle in the box and 
     for (i = 0;i < ATOMS;i++)
     {
@@ -74,11 +74,11 @@ double energy_calc(double box[][3])
 }
 
 //energy change after each displacement
-double energy_change_calc(double box[][3], double prev_x, double prev_y, double prev_z, double prev_energy, long long random_atom)
+double energy_change_calc(double box[][3], double prev_x, double prev_y, double prev_z, double prev_energy, int random_atom)
 {
     double prev_interactions = 0.0;
     double new_interactions = 0.0;
-    long long i;
+    int i;
     for (i = 0;i < ATOMS;i++)
     {
         if (i != random_atom)
@@ -142,7 +142,7 @@ int main()
 
     ios::sync_with_stdio(0);
     cin.tie(0);
-    long long i, j;
+    int i, j;
 
     double box[ATOMS][3]; //x,y,z
     vector<double> energy;
@@ -174,17 +174,22 @@ int main()
     cout << energy.back() << '\n';
 
     //no of accepted iterations
-    long long ACCEPTED_COUNT = 0;
+    int ACCEPTED_COUNT = 0;
 
     while (ACCEPTED_COUNT < MOVES_LIMIT)
     {
         //selecting a random atom
-        long long random_atom = (long long)(random_number(0, ATOMS));
+        int random_atom = (int)(random_number(0, ATOMS));
 
         //storing old coordinates as previous for using, if rejected
         double prev_x = box[random_atom][0];
         double prev_y = box[random_atom][1];
         double prev_z = box[random_atom][2];
+
+        //1. calculate interactions for the random atom 
+        //2. give random displacement
+        //3. find interactions now
+        //4. find new energy
 
         //giving random displacement to the selected random atom
         box[random_atom][0] += random_number(0, 1.0) - 0.5;
