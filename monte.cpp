@@ -39,6 +39,29 @@ double pbc(double x)
     return x;
 }
 
+double calc_LJ(double box[][3], int x, int y)
+{
+    double delx = box[x][0] - box[y][0];   // ∆x => difference in x-values
+    double dely = box[x][1] - box[y][1];
+    double delz = box[x][2] - box[y][2];
+
+    delx = min_img(delx);
+    dely = min_img(dely);
+    delz = min_img(delz);
+
+    double r_sq = (delx * delx) + (dely * dely) + (delz * delz);
+
+    if (r_sq <= CUTOFF * CUTOFF)                     //if distance is to far, effected is neglected, energy is not added
+        return 0;
+
+    double SIGMA_sq = SIGMA * SIGMA;
+    double temp = (SIGMA_sq / r_sq);
+    double term2 = pow(temp, 3);                    //(σ/r)⁶
+    double term1 = term2 * term2;                   //(σ/r)¹²4
+    double LJ = 4.0 * EPSILON * (term1 - term2);    //Leonard-Jones Potential
+    return LJ;
+}
+
 //initial energy calculation
 double energy_calc(double box[][3])
 {
@@ -49,25 +72,7 @@ double energy_calc(double box[][3])
     {
         for (j = i + 1;j < ATOMS;j++)
         {
-            double delx = box[j][0] - box[i][0];   // ∆x => difference in x-values
-            double dely = box[j][1] - box[i][1];
-            double delz = box[j][2] - box[i][2];
-
-            delx = min_img(delx);
-            dely = min_img(dely);
-            delz = min_img(delz);
-
-            double r_sq = (delx * delx) + (dely * dely) + (delz * delz);
-
-            if (r_sq > CUTOFF * CUTOFF)                     //if distance is to far, effected is neglected, energy is not added
-                continue;
-
-            double SIGMA_sq = SIGMA * SIGMA;
-            double temp = (SIGMA_sq / r_sq);
-            double term2 = pow(temp, 3);                    //(σ/r)⁶
-            double term1 = term2 * term2;                   //(σ/r)¹²4
-            double LJ = 4.0 * EPSILON * (term1 - term2);    //Leonard-Jones Potential
-            energy += LJ;                                   //Adding energy for each atom
+            energy += calc_LJ(box, j, i);                                   //Adding energy for each atom
         }
     }
     return energy;
@@ -81,25 +86,7 @@ double calc_interactions(double box[][3], int random_atom)
     {
         if (i != random_atom)
         {
-            double delx = box[random_atom][0] - box[i][0];
-            double dely = box[random_atom][1] - box[i][1];
-            double delz = box[random_atom][2] - box[i][2];
-
-            delx = min_img(delx);
-            dely = min_img(dely);
-            delz = min_img(delz);
-
-            double r_sq = (delx * delx) + (dely * dely) + (delz * delz);
-
-            if (r_sq > CUTOFF * CUTOFF)
-                continue;
-
-            double SIGMA_sq = SIGMA * SIGMA;
-            double temp = (SIGMA_sq / r_sq);
-            double term2 = pow(temp, 3);
-            double term1 = term2 * term2;
-            double LJ = 4.0 * EPSILON * (term1 - term2);
-            interactions += LJ;
+            interactions += calc_LJ(box, random_atom, i);
         }
     }
     return interactions;
@@ -157,11 +144,6 @@ int main()
         double prev_y = box[random_atom][1];
         double prev_z = box[random_atom][2];
 
-        //1. calculate interactions for the random atom 
-        //2. give random displacement
-        //3. find interactions now
-        //4. find new energy
-
         double prev_interactions = calc_interactions(box, random_atom);
 
         //giving random displacement to the selected random atom
@@ -176,10 +158,8 @@ int main()
 
         double new_interactions = calc_interactions(box, random_atom);
 
-        // double new_energy = energy_change_calc(box, prev_x, prev_y, prev_z, energy.back(), random_atom);
-
-        //energy.back() -> last valid configuration's energy
         double energy_change = new_interactions - prev_interactions;
+        //energy.back() -> last valid configuration's energy
         double new_energy = energy.back() + energy_change;
 
         //energy change less than 0 -> finite probability
@@ -228,4 +208,3 @@ int main()
 
     return 0;
 }
-
