@@ -1,0 +1,6 @@
+data.txt
+
+# For ignoring binary files
+*
+!*/
+!*.*
