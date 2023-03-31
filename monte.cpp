@@ -23,11 +23,11 @@ double random_number(double left, double right)
     return dist(rd);
 }
 
-//minimum image convention
+//minimum image convention - we only consider the box around the selected random atom
 double min_img(double x)
 {
-    while (x < -5.0) x += 10.0;
-    while (x > 5.0) x -= 10.0;
+    while (x < -BOX_DIM / 2) x += BOX_DIM;
+    while (x > BOX_DIM / 2) x -= BOX_DIM;
     return x;
 }
 
@@ -53,7 +53,7 @@ double calc_LJ(double box[][3], int x, int y)
     double r_sq = (delx * delx) + (dely * dely) + (delz * delz);
 
     if (r_sq > CUTOFF * CUTOFF)                     //if distance is to far, effected is neglected, energy is not added
-        return 0;
+        return 0.0;
 
     double SIGMA_sq = SIGMA * SIGMA;
     double temp = (SIGMA_sq / r_sq);
@@ -64,7 +64,7 @@ double calc_LJ(double box[][3], int x, int y)
 }
 
 //initial energy calculation
-double energy_calc(double box[][3])
+double calc_total_energy(double box[][3])
 {
     double energy = 0;
     int i, j;
@@ -73,7 +73,7 @@ double energy_calc(double box[][3])
     {
         for (j = i + 1;j < ATOMS;j++)
         {
-            energy += calc_LJ(box, j, i);                        //Adding interaction for bwn every atom combination
+            energy += calc_LJ(box, j, i);               //Adding interaction for bwn every atom combination
         }
     }
     return energy;
@@ -82,10 +82,12 @@ double energy_calc(double box[][3])
 double calc_interactions(double box[][3], int random_atom)
 {
     double interactions = 0.0;
-    int i;
-    for (i = 0;i != random_atom && i < ATOMS;i++)
+    for (int i = 0;i < ATOMS;i++)
     {
-        interactions += calc_LJ(box, random_atom, i);
+        if (i != random_atom)
+        {
+            interactions += calc_LJ(box, random_atom, i);
+        }
     }
     return interactions;
 }
@@ -109,9 +111,8 @@ int main()
     {
         for (j = 0;j < 3;j++)
         {
-            box[i][j] = (int)((index[j] + 0.5) * (10 / 9));
+            box[i][j] = (int)((index[j] + 0.5) * (BOX_DIM / 9));
         }
-        cout << box[i][0] << " " << box[i][1] << " " << box[i][2] << "\n";
         index[0] = index[0] + 1;                        //we approximately distribute the 700 particles to 9³ = 729 places 
         if (index[0] == 9)
         {
@@ -127,7 +128,7 @@ int main()
 
 
     //pushing the initial finite probability configuration
-    energy.push_back(energy_calc(box));
+    energy.push_back(calc_total_energy(box));
     cout << energy.back() << '\n';
 
     //no of accepted iterations
@@ -170,7 +171,7 @@ int main()
             cout << "Accepted count is " << ACCEPTED_COUNT << "\n";
             cout << energy.back() << '\n';
             file << energy.back() << '\n';
-            gp << "plot '-' with lines title 'LJ'\n";
+            gp << "plot '-' with lines title 'Energy'\n";
             gp.send1d(energy);
             gp.flush();
         }
@@ -190,7 +191,7 @@ int main()
                 ACCEPTED_COUNT++;
                 cout << energy.back() << '\n';
                 file << energy.back() << '\n';
-                gp << "plot '-' with lines title 'LJ'\n";
+                gp << "plot '-' with lines title 'Energy'\n";
                 gp.send1d(energy);
                 gp.flush();
             }
