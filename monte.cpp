@@ -26,8 +26,8 @@ double random_number(double left, double right)
 //minimum image convention
 double min_img(double x)
 {
-    while (x < -BOX_DIM / 2) x += BOX_DIM;
-    while (x > BOX_DIM / 2) x -= BOX_DIM;
+    while (x < -5.0) x += 10.0;
+    while (x > 5.0) x -= 10.0;
     return x;
 }
 
@@ -39,6 +39,7 @@ double pbc(double x)
     return x;
 }
 
+//Leonard Jones Potential
 double calc_LJ(double box[][3], int x, int y)
 {
     double delx = box[x][0] - box[y][0];   // ∆x => difference in x-values
@@ -57,7 +58,7 @@ double calc_LJ(double box[][3], int x, int y)
     double SIGMA_sq = SIGMA * SIGMA;
     double temp = (SIGMA_sq / r_sq);
     double term2 = pow(temp, 3);                    //(σ/r)⁶
-    double term1 = term2 * term2;                   //(σ/r)¹²4
+    double term1 = term2 * term2;                   //(σ/r)¹²
     double LJ = 4.0 * EPSILON * (term1 - term2);    //Leonard-Jones Potential
     return LJ;
 }
@@ -72,7 +73,7 @@ double energy_calc(double box[][3])
     {
         for (j = i + 1;j < ATOMS;j++)
         {
-            energy += calc_LJ(box, j, i);                                   //Adding energy for each atom
+            energy += calc_LJ(box, j, i);                        //Adding interaction for bwn every atom combination
         }
     }
     return energy;
@@ -82,12 +83,9 @@ double calc_interactions(double box[][3], int random_atom)
 {
     double interactions = 0.0;
     int i;
-    for (i = 0;i < ATOMS;i++)
+    for (i = 0;i != random_atom && i < ATOMS;i++)
     {
-        if (i != random_atom)
-        {
-            interactions += calc_LJ(box, random_atom, i);
-        }
+        interactions += calc_LJ(box, random_atom, i);
     }
     return interactions;
 }
