@@ -26,8 +26,8 @@ double random_number(double left, double right)
 //minimum image convention
 double min_img(double x)
 {
-    while (x < -BOX_DIM / 2) x += BOX_DIM;
-    while (x > BOX_DIM / 2) x -= BOX_DIM;
+    while (x < -5.0) x += 10.0;
+    while (x > 5.0) x -= 10.0;
     return x;
 }
 
@@ -153,7 +153,7 @@ int main()
     {
         for (j = 0;j < 3;j++)
         {
-            box[i][j] = (int)((index[j] + 0.5) * (10 / 9));
+            box[i][j] = (int)((index[j] + 0.5) * (BOX_DIM / 9));
         }
         index[0] = index[0] + 1;                        //we approximately distribute the 700 particles to 9³ = 729 places 
         if (index[0] == 9)

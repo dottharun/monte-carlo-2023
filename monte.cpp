@@ -52,7 +52,7 @@ double calc_LJ(double box[][3], int x, int y)
 
     double r_sq = (delx * delx) + (dely * dely) + (delz * delz);
 
-    if (r_sq <= CUTOFF * CUTOFF)                     //if distance is to far, effected is neglected, energy is not added
+    if (r_sq > CUTOFF * CUTOFF)                     //if distance is to far, effected is neglected, energy is not added
         return 0;
 
     double SIGMA_sq = SIGMA * SIGMA;
@@ -111,6 +111,7 @@ int main()
         {
             box[i][j] = (int)((index[j] + 0.5) * (10 / 9));
         }
+        cout << box[i][0] << " " << box[i][1] << " " << box[i][2] << "\n";
         index[0] = index[0] + 1;                        //we approximately distribute the 700 particles to 9³ = 729 places 
         if (index[0] == 9)
         {
